@@ -38,3 +38,7 @@ next-env.d.ts
 # local env files
 .env
 .env*.local
+
+# microCMS
+NEXT_PUBLIC_MICROCMS_BASE_EP=https://f0nnm0zb89.microcms.io/api/v1
+NEXT_PUBLIC_MICROCMS_API_KEY=azK0bxdxIYraqeast7IjmTZMPyJDBktmxpF1
