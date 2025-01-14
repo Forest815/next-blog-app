@@ -1,9 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
+import { Category } from "@/app/_types/Category";
+import { faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
+import Link from "next/link";
 
 // カテゴリをフェッチしたときのレスポンスのデータ型
 type CategoryApiResponse = {
@@ -13,148 +15,114 @@ type CategoryApiResponse = {
   updatedAt: string;
 };
 
-// 投稿記事のカテゴリ選択用のデータ型
-type SelectableCategory = {
-  id: string;
-  name: string;
-  isSelect: boolean;
-};
-
-// 投稿記事の新規作成のページ
+// カテゴリの新規作成 (追加) のページ
 const Page: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
-
-  const [newTitle, setNewTitle] = useState("");
-  const [newContent, setNewContent] = useState("");
-  const [newCoverImageURL, setNewCoverImageURL] = useState("");
-
-  const router = useRouter();
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryNameError, setNewCategoryNameError] = useState("");
 
   // カテゴリ配列 (State)。取得中と取得失敗時は null、既存カテゴリが0個なら []
-  const [checkableCategories, setCheckableCategories] = useState<
-    SelectableCategory[] | null
-  >(null);
+  const [categories, setCategories] = useState<Category[] | null>(null);
+
+  // ウェブAPI (/api/categories) からカテゴリの一覧をフェッチする関数の定義
+  const fetchCategories = async () => {
+    try {
+      setIsLoading(true);
+
+      // フェッチ処理の本体
+      const requestUrl = "/api/categories";
+      const res = await fetch(requestUrl, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      // レスポンスのステータスコードが200以外の場合 (カテゴリのフェッチに失敗した場合)
+      if (!res.ok) {
+        setCategories(null);
+        throw new Error(`${res.status}: ${res.statusText}`); // -> catch節に移動
+      }
+
+      // レスポンスのボディをJSONとして読み取りカテゴリ配列 (State) にセット
+      const apiResBody = (await res.json()) as CategoryApiResponse[];
+      setCategories(
+        apiResBody.map((body) => ({
+          id: body.id,
+          name: body.name,
+        }))
+      );
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? `カテゴリの一覧のフェッチに失敗しました: ${error.message}`
+          : `予期せぬエラーが発生しました ${error}`;
+      console.error(errorMsg);
+      setFetchErrorMsg(errorMsg);
+    } finally {
+      // 成功した場合も失敗した場合もローディング状態を解除
+      setIsLoading(false);
+    }
+  };
 
   // コンポーネントがマウントされたとき (初回レンダリングのとき) に1回だけ実行
   useEffect(() => {
-    // ウェブAPI (/api/categories) からカテゴリの一覧をフェッチする関数の定義
-    const fetchCategories = async () => {
-      try {
-        setIsLoading(true);
-
-        // フェッチ処理の本体
-        const requestUrl = "/api/categories";
-        const res = await fetch(requestUrl, {
-          method: "GET",
-          cache: "no-store",
-        });
-
-        // レスポンスのステータスコードが200以外の場合 (カテゴリのフェッチに失敗した場合)
-        if (!res.ok) {
-          setCheckableCategories(null);
-          throw new Error(`${res.status}: ${res.statusText}`); // -> catch節に移動
-        }
-
-        // レスポンスのボディをJSONとして読み取りカテゴリ配列 (State) にセット
-        const apiResBody = (await res.json()) as CategoryApiResponse[];
-        setCheckableCategories(
-          apiResBody.map((body) => ({
-            id: body.id,
-            name: body.name,
-            isSelect: false,
-          }))
-        );
-      } catch (error) {
-        const errorMsg =
-          error instanceof Error
-            ? `カテゴリの一覧のフェッチに失敗しました: ${error.message}`
-            : `予期せぬエラーが発生しました ${error}`;
-        console.error(errorMsg);
-        setFetchErrorMsg(errorMsg);
-      } finally {
-        // 成功した場合も失敗した場合もローディング状態を解除
-        setIsLoading(false);
-      }
-    };
-
     fetchCategories();
   }, []);
 
-  // チェックボックスの状態 (State) を更新する関数
-  const switchCategoryState = (categoryId: string) => {
-    if (!checkableCategories) return;
-
-    setCheckableCategories(
-      checkableCategories.map((category) =>
-        category.id === categoryId
-          ? { ...category, isSelect: !category.isSelect }
-          : category
-      )
-    );
+  // カテゴリの名前のバリデーション
+  const isValidCategoryName = (name: string): string => {
+    if (name.length < 2 || name.length > 16) {
+      return "2文字以上16文字以内で入力してください。";
+    }
+    if (categories && categories.some((c) => c.name === name)) {
+      return "同じ名前のカテゴリが既に存在します。";
+    }
+    return "";
   };
 
-  const updateNewTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ここにタイトルのバリデーション処理を追加する
-    setNewTitle(e.target.value);
+  // テキストボックスの値が変更されたときにコールされる関数
+  const updateNewCategoryName = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewCategoryNameError(isValidCategoryName(e.target.value));
+    setNewCategoryName(e.target.value);
   };
 
-  const updateNewContent = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // ここに本文のバリデーション処理を追加する
-    setNewContent(e.target.value);
-  };
-
-  const updateNewCoverImageURL = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ここにカバーイメージURLのバリデーション処理を追加する
-    setNewCoverImageURL(e.target.value);
-  };
-
-  // フォームの送信処理
+  // フォームのボタン (type="submit") がクリックされたときにコールされる関数
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // この処理をしないとページがリロードされるので注意
-
+    e.preventDefault(); // これを実行しないと意図せずページがリロードされるので注意
     setIsSubmitting(true);
 
-    // ▼▼ 追加 ウェブAPI (/api/admin/posts) にPOSTリクエストを送信する処理
+    // ▼▼ 追加 ウェブAPI (/api/admin/categories) にPOSTリクエストを送信する処理
     try {
-      const requestBody = {
-        title: newTitle,
-        content: newContent,
-        coverImageURL: newCoverImageURL,
-        categoryIds: checkableCategories
-          ? checkableCategories.filter((c) => c.isSelect).map((c) => c.id)
-          : [],
-      };
-      const requestUrl = "/api/admin/posts";
-      console.log(`${requestUrl} => ${JSON.stringify(requestBody, null, 2)}`);
+      const requestUrl = "/api/admin/categories";
       const res = await fetch(requestUrl, {
         method: "POST",
         cache: "no-store",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({ name: newCategoryName }),
       });
 
       if (!res.ok) {
         throw new Error(`${res.status}: ${res.statusText}`); // -> catch節に移動
       }
 
-      const postResponse = await res.json();
-      setIsSubmitting(false);
-      router.push(`/posts/${postResponse.id}`); // 投稿記事の詳細ページに移動
+      setNewCategoryName("");
+      await fetchCategories(); // カテゴリの一覧を再取得
     } catch (error) {
       const errorMsg =
         error instanceof Error
-          ? `投稿記事のPOSTリクエストに失敗しました\n${error.message}`
+          ? `カテゴリのPOSTリクエストに失敗しました\n${error.message}`
           : `予期せぬエラーが発生しました\n${error}`;
       console.error(errorMsg);
       window.alert(errorMsg);
+    } finally {
       setIsSubmitting(false);
     }
   };
 
+  // カテゴリをウェブAPIから取得中の画面
   if (isLoading) {
     return (
       <div className="text-gray-500">
@@ -164,13 +132,15 @@ const Page: React.FC = () => {
     );
   }
 
-  if (!checkableCategories) {
+  // カテゴリをウェブAPIから取得することに失敗したときの画面
+  if (!categories) {
     return <div className="text-red-500">{fetchErrorMsg}</div>;
   }
 
+  // カテゴリ取得完了後の画面
   return (
     <main>
-      <div className="mb-4 text-2xl font-bold">投稿記事の新規作成</div>
+      <div className="mb-4 text-2xl font-bold">カテゴリの新規作成</div>
 
       {isSubmitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -186,75 +156,32 @@ const Page: React.FC = () => {
 
       <form
         onSubmit={handleSubmit}
-        className={twMerge("space-y-4", isSubmitting && "opacity-50")}
+        className={twMerge("mb-4 space-y-4", isSubmitting && "opacity-50")}
       >
         <div className="space-y-1">
-          <label htmlFor="title" className="block font-bold">
-            タイトル
+          <label htmlFor="name" className="block font-bold">
+            名前
           </label>
           <input
             type="text"
-            id="title"
-            name="title"
+            id="name"
+            name="name"
             className="w-full rounded-md border-2 px-2 py-1"
-            value={newTitle}
-            onChange={updateNewTitle}
-            placeholder="タイトルを記入してください"
+            placeholder="新しいカテゴリの名前を記入してください"
+            value={newCategoryName}
+            onChange={updateNewCategoryName}
+            autoComplete="off"
             required
           />
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="content" className="block font-bold">
-            本文
-          </label>
-          <textarea
-            id="content"
-            name="content"
-            className="h-48 w-full rounded-md border-2 px-2 py-1"
-            value={newContent}
-            onChange={updateNewContent}
-            placeholder="本文を記入してください"
-            required
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="coverImageURL" className="block font-bold">
-            カバーイメージ (URL)
-          </label>
-          <input
-            type="url"
-            id="coverImageURL"
-            name="coverImageURL"
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={newCoverImageURL}
-            onChange={updateNewCoverImageURL}
-            placeholder="カバーイメージのURLを記入してください"
-            required
-          />
-        </div>
-
-        <div className="space-y-1">
-          <div className="font-bold">タグ</div>
-          <div className="flex flex-wrap gap-x-3.5">
-            {checkableCategories.length > 0 ? (
-              checkableCategories.map((c) => (
-                <label key={c.id} className="flex space-x-1">
-                  <input
-                    id={c.id}
-                    type="checkbox"
-                    checked={c.isSelect}
-                    className="mt-0.5 cursor-pointer"
-                    onChange={() => switchCategoryState(c.id)}
-                  />
-                  <span className="cursor-pointer">{c.name}</span>
-                </label>
-              ))
-            ) : (
-              <div>選択可能なカテゴリが存在しません。</div>
-            )}
-          </div>
+          {newCategoryNameError && (
+            <div className="flex items-center space-x-1 text-sm font-bold text-red-500">
+              <FontAwesomeIcon
+                icon={faTriangleExclamation}
+                className="mr-0.5"
+              />
+              <div>{newCategoryNameError}</div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end">
@@ -263,14 +190,46 @@ const Page: React.FC = () => {
             className={twMerge(
               "rounded-md px-5 py-1 font-bold",
               "bg-indigo-500 text-white hover:bg-indigo-600",
-              "disabled:cursor-not-allowed"
+              "disabled:cursor-not-allowed disabled:opacity-50"
             )}
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting ||
+              newCategoryNameError !== "" ||
+              newCategoryName === ""
+            }
           >
-            記事を投稿
+            カテゴリを作成
           </button>
         </div>
       </form>
+
+      <div className="mb-2 text-2xl font-bold">作成されたカテゴリの一覧</div>
+      {categories.length === 0 ? (
+        <div className="text-gray-500">
+          （カテゴリは1個も作成されていません）
+        </div>
+      ) : (
+        <div>
+          <div className="mb-2">
+            クリックすると各カテゴリの名前編集・削除画面に移動します。
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <div
+                key={category.id}
+                className={twMerge(
+                  "rounded-md px-2 py-0.5",
+                  "border border-slate-400 text-slate-500"
+                )}
+              >
+                <Link href={`/admin/categories/${category.id}`}>
+                  {category.name}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </main>
   );
 };

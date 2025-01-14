@@ -14,23 +14,22 @@ const Page: React.FC = () => {
         )}
       >
         <Image
-          src="/images/avatar.png"
-          alt="Example Image"
-          width={350}
-          height={0} // Auto height (アスペクト比を保持)
-          priority
-          className="rounded-full border-4 border-slate-500 p-1.5"
+          src="/avatar.png"
+          alt="説明文" // 画像の説明文を設定
+          width={600} // 画像の幅を設定
+          height={400} // 画像の高さを設定
+          className="rounded-lg" // 必要に応じてクラスを追加
         />
       </div>
 
       <div className="space-y-3">
         <div className="md:flex md:justify-center">
           <div className="font-bold md:w-1/6 md:text-center">名 前</div>
-          <div className="md:w-5/6">寝屋川 タヌキ (Tanuki Neyagawa)</div>
+          <div className="md:w-5/6">彌園 和志 (Kazushi Misono)</div>
         </div>
         <div className="md:flex md:justify-center">
           <div className="font-bold md:w-1/6 md:text-center">連絡先</div>
-          <div className="md:w-5/6">tanuki.neyagawa@example.com</div>
+          <div className="md:w-5/6">rk22142w@st.omu.ac.jp</div>
         </div>
         <div className="md:flex md:justify-center">
           <div className="font-bold md:w-1/6 md:text-center">
@@ -38,10 +37,10 @@ const Page: React.FC = () => {
           </div>
           <div className="md:w-5/6">
             <a
-              href="https://google.com"
+              href="https://forest815.github.io/--7_35_/"
               className="mr-1 text-blue-500 underline"
             >
-              タヌキ&apos;s Portfolio
+              Kazushi&apos;s Portfolio
             </a>
             (GitHub Pages)
           </div>

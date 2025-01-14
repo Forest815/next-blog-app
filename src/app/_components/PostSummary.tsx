@@ -34,11 +34,6 @@ const PostSummary: React.FC<Props> = (props) => {
           ))}
         </div>
       </div>
-      {/* <div className="mb-1 text-lg font-bold">{post.title}</div>
-      <div
-        className="line-clamp-3"
-        dangerouslySetInnerHTML={{ __html: safeHTML }}
-      /> */}
       <Link href={`/posts/${post.id}`}>
         <div className="mb-1 text-lg font-bold">{post.title}</div>
         <div
