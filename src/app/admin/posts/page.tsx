@@ -10,6 +10,7 @@ import { twMerge } from "tailwind-merge";
 
 const Page: React.FC = () => {
   const [posts, setPosts] = useState<Post[] | null>(null);
+  const [selectedPostIds, setSelectedPostIds] = useState<string[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -52,8 +53,49 @@ const Page: React.FC = () => {
     fetchPosts();
   }, [fetchPosts]);
 
-  const reloadAction = async () => {
-    await fetchPosts();
+  const handleCheckboxChange = (postId: string) => {
+    setSelectedPostIds((prev) =>
+      prev.includes(postId)
+        ? prev.filter((id) => id !== postId)
+        : [...prev, postId]
+    );
+  };
+
+  const handleDeleteSelected = async () => {
+    if (
+      !window.confirm(
+        "選択された投稿をすべて削除します。本当によろしいですか？"
+      )
+    ) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await Promise.all(
+        selectedPostIds.map(async (postId) => {
+          const requestUrl = `/api/posts/${postId}`;
+          const response = await fetch(requestUrl, {
+            method: "DELETE",
+            cache: "no-store",
+          });
+          if (!response.ok) {
+            throw new Error(`投稿 ${postId} の削除に失敗しました`);
+          }
+        })
+      );
+      setSelectedPostIds([]);
+      await fetchPosts();
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? `投稿の削除中にエラーが発生しました\n${error.message}`
+          : "予期せぬエラーが発生しました";
+      window.alert(errorMsg);
+      console.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (fetchError) {
@@ -73,7 +115,19 @@ const Page: React.FC = () => {
     <main>
       <div className="text-2xl font-bold">投稿記事の管理</div>
 
-      <div className="mb-3 flex items-end justify-end">
+      <div className="mb-3 flex items-end justify-between">
+        <button
+          type="button"
+          onClick={handleDeleteSelected}
+          disabled={isSubmitting || selectedPostIds.length === 0}
+          className={twMerge(
+            "rounded-md px-5 py-1 font-bold",
+            "bg-red-500 text-white hover:bg-red-600",
+            "disabled:cursor-not-allowed disabled:opacity-50"
+          )}
+        >
+          選択した投稿を削除
+        </button>
         <Link href="/admin/posts/new">
           <button
             type="submit"
@@ -90,12 +144,21 @@ const Page: React.FC = () => {
 
       <div className="space-y-3">
         {posts.map((post) => (
-          <AdminPostSummary
-            key={post.id}
-            post={post}
-            reloadAction={reloadAction}
-            setIsSubmitting={setIsSubmitting}
-          />
+          <div key={post.id} className="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              checked={selectedPostIds.includes(post.id)}
+              onChange={() => handleCheckboxChange(post.id)}
+              className="flex-shrink-0"
+            />
+            <div className="flex-grow">
+              <AdminPostSummary
+                post={post}
+                reloadAction={fetchPosts}
+                setIsSubmitting={setIsSubmitting}
+              />
+            </div>
+          </div>
         ))}
       </div>
 
