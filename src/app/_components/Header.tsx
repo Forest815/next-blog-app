@@ -3,7 +3,7 @@ import Link from "next/link";
 import { twMerge } from "tailwind-merge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFish } from "@fortawesome/free-solid-svg-icons";
-import { supabase } from "@/app/utils/supabase"; // ◀ 追加
+import { supabase } from "../../utils/supabase"; // ◀ 追加
 import { useAuth } from "@/app/_hooks/useAuth"; // ◀ 追加
 import { useRouter } from "next/navigation"; // ◀ 追加
 
