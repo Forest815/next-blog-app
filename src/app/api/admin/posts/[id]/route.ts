@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { Post } from "@prisma/client";
+import { supabase } from "@/utils/supabase"; // ◀ 追加
 
 type RouteParams = {
   params: {
@@ -14,8 +15,12 @@ type RequestBody = {
   coverImageURL: string;
   categoryIds: string[];
 };
-
 export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
+  // JWTトークンの検証・認証 (失敗したら 401 Unauthorized を返す)
+  const token = req.headers.get("Authorization") ?? "";
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 401 });
   try {
     const id = routeParams.params.id;
     const requestBody: RequestBody = await req.json();
@@ -71,6 +76,12 @@ export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
 };
 
 export const DELETE = async (req: NextRequest, routeParams: RouteParams) => {
+  // JWTトークンの検証・認証 (失敗したら 401 Unauthorized を返す)
+  const token = req.headers.get("Authorization") ?? "";
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 401 });
+
   try {
     const id = routeParams.params.id;
     const post: Post = await prisma.post.delete({
