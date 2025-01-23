@@ -144,7 +144,7 @@ const Page: React.FC = () => {
         cache: "no-store",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token,
+          Authorization: token, // ◀ 追加
         },
         body: JSON.stringify(requestBody),
       });

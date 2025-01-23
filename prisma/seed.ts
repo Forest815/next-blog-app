@@ -21,6 +21,7 @@ const main = async () => {
       content: "投稿1の本文。<br/>投稿1の本文。投稿1の本文。",
       coverImageURL:
         "https://w1980.blob.core.windows.net/pg3/cover-img-red.jpg",
+      //coverImageKey: "cover-img-red.jpg",
       categories: {
         create: [{ categoryId: c1.id }, { categoryId: c2.id }],
       },
