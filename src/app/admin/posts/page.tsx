@@ -149,9 +149,9 @@ const Page: React.FC = () => {
               type="checkbox"
               checked={selectedPostIds.includes(post.id)}
               onChange={() => handleCheckboxChange(post.id)}
-              className="flex-shrink-0"
+              className="shrink-0"
             />
-            <div className="flex-grow">
+            <div className="grow">
               <AdminPostSummary
                 post={post}
                 reloadAction={fetchPosts}
