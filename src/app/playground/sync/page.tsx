@@ -11,7 +11,7 @@ const syncTask = (name: string) => {
 const heavySyncTask = (workload: number) => {
   // なんらかの重たい処理が実行されると仮定
   const startTime = Date.now();
-  while (Date.now() - startTime < 1000) {}
+  while (Date.now() - startTime < workload) {}
   const ret = Math.floor(Math.random() * 10);
   console.log("同期処理 heavySyncTask が完了しました");
   return ret;
@@ -21,7 +21,7 @@ const Page: React.FC = () => {
   const syncProcess = () => {
     console.log("関数 syncProcess を開始");
     syncTask("処理1");
-    heavySyncTask(2000); // 実行完了に2000msかかる処理
+    heavySyncTask(2000);
     syncTask("処理2");
     syncTask("処理3");
     console.log("関数 syncProcess の最後に到達");

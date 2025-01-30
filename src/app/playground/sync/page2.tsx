@@ -8,40 +8,64 @@ const syncTask = (name: string) => {
   console.log(`同期処理 ${name} が完了しました`);
 };
 
+const heavySyncTask = (workload: number) => {
+  const startTime = Date.now();
+  while (Date.now() - startTime < 1000) {}
+  const ret = Math.floor(Math.random() * 10);
+  console.log("同期処理 heavySyncTask が完了しました");
+  return ret;
+};
+
 const heavyAsyncTask = async (workload: number) => {
-  await new Promise((resolve) => setTimeout(resolve, workload));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   const ret = Math.floor(Math.random() * 10);
   console.log("非同期処理 heavyAsyncTask が完了しました");
   return ret;
 };
 
 const Page: React.FC = () => {
+  const syncProcess = () => {
+    console.log("関数 syncProcess を開始");
+    syncTask("処理1");
+    heavySyncTask(1500);
+    syncTask("処理2");
+    console.log("関数 syncProcess の最後に到達");
+  };
+
   const asyncProcess = async () => {
     console.log("関数 asyncProcess を開始");
     syncTask("処理1");
-    const asyncTask = heavyAsyncTask(2000);
+    heavyAsyncTask(1500);
     syncTask("処理2");
-    const num = await asyncTask;
-    syncTask(`処理3 num=${num}`);
     console.log("関数 asyncProcess の最後に到達");
   };
 
   return (
     <main>
-      <div className="mb-5 text-2xl font-bold">
-        非同期処理を理解するための実験1
-      </div>
+      <div className="mb-5 text-2xl font-bold">同期処理と非同期処理</div>
       <div className="space-y-3">
-        <button
-          type="button"
-          onClick={asyncProcess}
-          className={twMerge(
-            "rounded-md px-3 py-1",
-            "bg-indigo-500 font-bold text-white hover:bg-indigo-600"
-          )}
-        >
-          非同期処理の実行
-        </button>
+        <div className="space-x-2">
+          <button
+            type="button"
+            onClick={syncProcess}
+            className={twMerge(
+              "rounded-md px-3 py-1 ",
+              "bg-indigo-500 font-bold text-white hover:bg-indigo-600"
+            )}
+          >
+            同期処理の実行
+          </button>
+          <button
+            type="button"
+            onClick={asyncProcess}
+            className={twMerge(
+              "rounded-md px-3 py-1 ",
+              "bg-indigo-500 font-bold text-white hover:bg-indigo-600"
+            )}
+          >
+            非同期処理の実行
+          </button>
+        </div>
         <div className="flex justify-items-start space-x-2">
           <div>
             <FontAwesomeIcon

@@ -16,6 +16,5 @@ const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 // 作成した prisma インスタンスを他から利用できるようにエクスポート
 export default prisma;
 
-// 開発環境の場合のみ、作成したインスタンスをグローバルスコープに保存し、
-// ホットリロード時の再利用を可能にする
+// 開発環境の場合のみ、作成したインスタンスをグローバルスコープに保存してホットリロード時の再利用を可能にする
 if (process.env.NODE_ENV !== "production") globalThis.prismaGlobal = prisma;

@@ -12,14 +12,12 @@ const Page: React.FC = () => {
       // ウェブAPIにGETリクエストを送信してレスポンスを取得
       const requestUrl = `${endpoint}?zipcode=${code}`;
       const response = await fetch(requestUrl, {
-        // ◀◀ 注目
         method: "GET",
         cache: "no-store", // キャッシュを利用しない
       });
-      console.log("ウェブAPIからデータを取得しました");
 
       // レスポンスからJSON形式でデータ取得して整形して表示
-      const parsedData = await response.json(); // ◀◀ 注目
+      const parsedData = await response.json();
       setResponse(JSON.stringify(parsedData, null, 2));
     };
 
