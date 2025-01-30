@@ -6,6 +6,7 @@
 // 4. npx prisma db seed
 
 
+
 generator client {
   provider = "prisma-client-js"
 }
