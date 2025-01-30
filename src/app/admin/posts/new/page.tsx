@@ -1,6 +1,5 @@
 "use client";
-
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSave, faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -18,46 +17,36 @@ const calculateMD5Hash = async (file: File): Promise<string> => {
 
 const NewPostPage: React.FC = () => {
   const bucketName = "cover_image";
-  const [newTitle, setNewTitle] = useState("");
-  const [newContent, setNewContent] = useState("");
-  const [newCoverImageURL, setNewCoverImageURL] = useState<string>("");
+  const [productName, setProductName] = useState("");
+  const [deadline, setDeadline] = useState("");
+  const [priority, setPriority] = useState("low");
   const [newCoverImageKey, setNewCoverImageKey] = useState<
     string | undefined
   >();
   const [coverImageUrl, setCoverImageUrl] = useState<string | undefined>();
-  const [titleError, setTitleError] = useState<string | null>(null);
-  const [contentError, setContentError] = useState<string | null>(null);
-  const [coverImageKeyError, setCoverImageKeyError] = useState<string | null>(
-    null
-  );
+  const [productNameError, setProductNameError] = useState<string | null>(null);
+  const [deadlineError, setDeadlineError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
   const router = useRouter();
   const { session } = useAuth();
-  //const hiddenFileInputRef = useRef<HTMLInputElement>(null);
+  const hiddenFileInputRef = useRef<HTMLInputElement>(null);
 
   const validateInputs = () => {
     let isValid = true;
-    if (newTitle.trim() === "") {
-      setTitleError("文字を入力してください");
+    if (productName.trim() === "") {
+      setProductNameError("商品名を入力してください");
       isValid = false;
     } else {
-      setTitleError(null);
+      setProductNameError(null);
     }
 
-    if (newContent.trim() === "") {
-      setContentError("文字を入力してください");
+    if (deadline.trim() === "") {
+      setDeadlineError("期限を入力してください");
       isValid = false;
     } else {
-      setContentError(null);
-    }
-
-    if (!newCoverImageKey) {
-      setCoverImageKeyError("画像をアップロードしてください");
-      isValid = false;
-    } else {
-      setCoverImageKeyError(null);
+      setDeadlineError(null);
     }
 
     return isValid;
@@ -70,39 +59,43 @@ const NewPostPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      // 画像がアップロードされていない場合はデフォルトの avatar.png を設定
+      const coverImageKeyToUse = newCoverImageKey || "path/to/avatar.png";
+
       const response = await fetch("/api/posts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          title: newTitle,
-          content: newContent,
-          coverImageKey: newCoverImageKey,
+          productName,
+          deadline,
+          priority,
+          coverImageKey: coverImageKeyToUse,
         }),
       });
       if (!response.ok) {
-        throw new Error("投稿記事の作成に失敗しました");
+        throw new Error("投稿の作成に失敗しました");
       }
       router.push("/admin/posts");
     } catch (error) {
       console.error(error);
-      alert("投稿記事の作成に失敗しました");
+      alert("投稿の作成に失敗しました");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const updateNewTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewTitle(e.target.value);
+  const updateProductName = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProductName(e.target.value);
   };
 
-  const updateNewContent = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNewContent(e.target.value);
+  const updateDeadline = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDeadline(e.target.value);
   };
 
-  const updateNewCoverImageURL = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewCoverImageURL(e.target.value);
+  const updatePriority = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPriority(e.target.value);
   };
 
   const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -145,59 +138,110 @@ const NewPostPage: React.FC = () => {
 
   return (
     <main>
-      <div className="mb-5 text-2xl font-bold">新しい投稿記事の作成</div>
+      <div className="mb-5 text-2xl font-bold">新しい買い物予定の作成</div>
       <div className="space-y-3">
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            タイトル
+            商品名
           </label>
           <input
             type="text"
-            value={newTitle}
-            onChange={updateNewTitle}
+            value={productName}
+            onChange={updateProductName}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
-          {titleError && <div className="text-red-500">{titleError}</div>}
+          {productNameError && (
+            <div className="text-red-500">{productNameError}</div>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            内容
-          </label>
-          <textarea
-            value={newContent}
-            onChange={updateNewContent}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            rows={10}
-          />
-          {contentError && <div className="text-red-500">{contentError}</div>}
-        </div>
-        <div>
-          <label
-            htmlFor="coverImageURL"
-            className="block text-sm font-medium text-gray-700"
-          >
-            カバーイメージ (URL) <span className="text-gray-500">(任意)</span>
+            期限
           </label>
           <input
-            type="url"
-            id="coverImageURL"
-            name="coverImageURL"
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={newCoverImageURL}
-            onChange={updateNewCoverImageURL}
-            placeholder="カバーイメージのURLを記入してください"
+            type="date"
+            value={deadline}
+            onChange={updateDeadline}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
-          {newCoverImageURL && (
-            <div className="mt-4">
+          {deadlineError && <div className="text-red-500">{deadlineError}</div>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            写真 (任意)
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            hidden={true}
+            ref={hiddenFileInputRef}
+          />
+          <button
+            onClick={() => hiddenFileInputRef.current?.click()}
+            type="button"
+            className="rounded-md bg-indigo-500 px-3 py-1 text-white"
+          >
+            ファイルを選択
+          </button>
+          <div className="break-all text-sm">
+            coverImageKey : {newCoverImageKey}
+          </div>
+          <div className="break-all text-sm">
+            coverImageUrl : {coverImageUrl}
+          </div>
+          {coverImageUrl && (
+            <div className="mt-2">
               <Image
-                src={newCoverImageURL}
-                alt="カバーイメージ"
-                width={64}
-                height={64}
-                className="size-8"
+                className="w-1/2 border-2 border-gray-300"
+                src={coverImageUrl}
+                alt="プレビュー画像"
+                width={1024}
+                height={1024}
+                priority
               />
             </div>
           )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            優先度
+          </label>
+          <div className="mt-1 flex space-x-4">
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="priority"
+                value="low"
+                checked={priority === "low"}
+                onChange={updatePriority}
+                className="mr-2"
+              />
+              低
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="priority"
+                value="medium"
+                checked={priority === "medium"}
+                onChange={updatePriority}
+                className="mr-2"
+              />
+              中
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="priority"
+                value="high"
+                checked={priority === "high"}
+                onChange={updatePriority}
+                className="mr-2"
+              />
+              高
+            </label>
+          </div>
         </div>
         <div className="flex justify-end space-x-2">
           <button
