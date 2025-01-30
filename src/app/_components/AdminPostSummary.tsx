@@ -1,111 +1,77 @@
 "use client";
 import { useState } from "react";
-import type { Post } from "@/app/_types/Post";
+import type { ToDo } from "@/app/_types/ToDo";
 import dayjs from "dayjs";
 import { twMerge } from "tailwind-merge";
 import DOMPurify from "isomorphic-dompurify";
 import Link from "next/link";
 
 type Props = {
-  post: Post;
+  todo: ToDo;
   reloadAction: () => Promise<void>;
   setIsSubmitting: (isSubmitting: boolean) => void;
 };
 
-const AdminPostSummary: React.FC<Props> = (props) => {
-  const { post } = props;
-  const dtFmt = "YYYY-MM-DD";
-  const safeHTML = DOMPurify.sanitize(post.content, {
-    ALLOWED_TAGS: ["b", "strong", "i", "em", "u", "br"],
-  });
+const AdminToDoSummary: React.FC<Props> = ({
+  todo,
+  reloadAction,
+  setIsSubmitting,
+}) => {
+  const [isCompleted, setIsCompleted] = useState(todo.completed);
 
-  // 「削除」のボタンが押下されたときにコールされる関数
-  const handleDelete = async (post: Post) => {
-    // prettier-ignore
-    if (!window.confirm(`投稿記事「${post.title}」を本当に削除しますか？`)) {
-      return;
-    }
-
+  const handleToggleComplete = async () => {
+    setIsSubmitting(true);
     try {
-      props.setIsSubmitting(true);
-      const requestUrl = `/api/admin/posts/${post.id}`;
-      const res = await fetch(requestUrl, {
-        method: "DELETE",
-        cache: "no-store",
+      const response = await fetch(`/api/todos/${todo.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...todo, completed: !isCompleted }),
       });
-
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
+      if (!response.ok) {
+        throw new Error("ToDoの更新に失敗しました");
       }
-      await props.reloadAction();
+      setIsCompleted(!isCompleted);
+      await reloadAction();
     } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `投稿記事のDELETEリクエストに失敗しました\n${error.message}`
-          : `予期せぬエラーが発生しました\n${error}`;
-      console.error(errorMsg);
-      window.alert(errorMsg);
+      console.error(error);
     } finally {
-      props.setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="border border-slate-400 p-3">
-      <div className="flex items-center justify-between">
-        <div>{dayjs(post.createdAt).format(dtFmt)}</div>
-        <div className="flex space-x-1.5">
-          {post.categories.map((category) => (
-            <div
-              key={category.id}
-              className={twMerge(
-                "rounded-md px-2 py-0.5",
-                "text-xs font-bold",
-                "border border-slate-400 text-slate-500"
-              )}
-            >
-              <Link href={`/admin/categories/${category.id}`}>
-                {category.name}
-              </Link>
-            </div>
-          ))}
-        </div>
+    <div className="flex items-center justify-between border-b pb-2">
+      <div>
+        <div className="font-bold">{todo.title}</div>
+        <div>{DOMPurify.sanitize(todo.description)}</div>
+        <div>期限: {dayjs(todo.dueDate).format("YYYY-MM-DD")}</div>
+        <div>優先度: {todo.priority}</div>
+        <div>完了: {isCompleted ? "はい" : "いいえ"}</div>
       </div>
-      <Link href={`/posts/${post.id}`}>
-        <div className="mb-1 text-lg font-bold">{post.title}</div>
-        <div
-          className="line-clamp-3"
-          dangerouslySetInnerHTML={{ __html: safeHTML }}
-        />
-      </Link>
-      <div className="flex justify-end space-x-2">
-        <Link href={`/admin/posts/${post.id}`}>
+      <div className="flex space-x-2">
+        <button
+          type="button"
+          onClick={handleToggleComplete}
+          className={twMerge(
+            "rounded bg-green-500 px-3 py-1 text-white hover:bg-green-600",
+            isCompleted && "bg-gray-500 hover:bg-gray-600"
+          )}
+        >
+          {isCompleted ? "未完了にする" : "完了にする"}
+        </button>
+        <Link href={`/admin/todos/edit/${todo.id}`}>
           <button
             type="button"
-            className={twMerge(
-              "rounded-md px-5 py-1 font-bold",
-              "bg-indigo-500 text-white hover:bg-indigo-600"
-            )}
+            className="rounded bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
           >
             編集
           </button>
         </Link>
-
-        <button
-          type="button"
-          className={twMerge(
-            "rounded-md px-5 py-1 font-bold",
-            "bg-red-500 text-white hover:bg-red-600"
-          )}
-          onClick={() => {
-            handleDelete(post);
-          }}
-        >
-          削除
-        </button>
       </div>
     </div>
   );
 };
 
-export default AdminPostSummary;
+export default AdminToDoSummary;

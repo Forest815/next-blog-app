@@ -1,34 +1,35 @@
-"use client";
-"use client";
+import type { Metadata } from "next";
+import "../globals.css"; // 正しいパスに修正
 
-import React from "react";
-import { useAuth } from "@/app/_hooks/useAuth";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import "@fortawesome/fontawesome-svg-core/styles.css";
+import { config } from "@fortawesome/fontawesome-svg-core";
+config.autoAddCss = false;
 
-interface Props {
-  children: React.ReactNode;
-}
-const AdminLayout = ({ children }: Props) => {
-  const router = useRouter();
-  const { isLoading, session } = useAuth();
+import Header from "@/app/_components/Header";
 
-  useEffect(() => {
-    // 認証状況の確認中は何もせずに戻る
-    if (isLoading) {
-      return;
-    }
-    // 認証確認後、未認証であればログインページにリダイレクト
-    if (session === null) {
-      router.replace("/login");
-    }
-  }, [isLoading, router, session]);
-
-  // 認証済みが確認できるまでは何も表示しない
-  if (!session) {
-    return null;
-  }
-  return <>{children}</>;
+export const metadata: Metadata = {
+  title: "NextBlogApp",
+  description: "Built to learn Next.js and modern web development.",
 };
 
-export default AdminLayout;
+import { ReactNode } from "react";
+
+interface RootLayoutProps {
+  children: ReactNode;
+}
+
+const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
+  return (
+    <html lang="ja">
+      <head>
+        <title>ToDoアプリ</title>
+      </head>
+      <body>
+        <Header />
+        <div className="mx-4 mt-2 max-w-2xl md:mx-auto">{children}</div>
+      </body>
+    </html>
+  );
+};
+
+export default RootLayout;

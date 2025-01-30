@@ -1,45 +1,56 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import type { Post } from "@/app/_types/Post";
-import type { PostApiResponse } from "@/app/_types/PostApiResponse";
-import Link from "next/link";
-import AdminPostSummary from "@/app/_components/AdminPostSummary";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSpinner,
+  faPlus,
+  faEdit,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
+import { ToDo } from "@/app/_types/ToDo";
+import Link from "next/link";
+
+// ToDoをフェッチしたときのレスポンスのデータ型
+type ToDoApiResponse = {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  priority: string;
+  completed: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 
 const Page: React.FC = () => {
-  const [posts, setPosts] = useState<Post[] | null>(null);
-  const [selectedPostIds, setSelectedPostIds] = useState<string[]>([]);
+  const [todos, setTodos] = useState<ToDo[] | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
-  const fetchPosts = useCallback(async () => {
+  const fetchToDos = async () => {
     try {
-      const requestUrl = `/api/posts`;
+      const requestUrl = "/api/todos";
       const response = await fetch(requestUrl, {
         method: "GET",
         cache: "no-store",
       });
       if (!response.ok) {
-        throw new Error("データの取得に失敗しました");
+        throw new Error("ToDoの取得に失敗しました");
       }
-      const postResponse: PostApiResponse[] = await response.json();
-      setPosts(
-        postResponse.map((rawPost) => ({
-          id: rawPost.id,
-          title: rawPost.title,
-          content: rawPost.content,
-          coverImage: {
-            url: rawPost.coverImageURL,
-            width: 1000,
-            height: 1000,
-          },
-          createdAt: rawPost.createdAt,
-          categories: rawPost.categories.map((category) => ({
-            id: category.category.id,
-            name: category.category.name,
-          })),
+      const todoResponse: ToDoApiResponse[] = await response.json();
+      setTodos(
+        todoResponse.map((todo) => ({
+          id: todo.id,
+          title: todo.title,
+          description: todo.description,
+          dueDate: todo.dueDate,
+          priority: todo.priority as "low" | "medium" | "high",
+          completed: todo.completed,
+          createdAt: todo.createdAt,
+          updatedAt: todo.updatedAt,
         }))
       );
     } catch (e) {
@@ -47,52 +58,24 @@ const Page: React.FC = () => {
         e instanceof Error ? e.message : "予期せぬエラーが発生しました"
       );
     }
-  }, []);
-
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
-
-  const handleCheckboxChange = (postId: string) => {
-    setSelectedPostIds((prev) =>
-      prev.includes(postId)
-        ? prev.filter((id) => id !== postId)
-        : [...prev, postId]
-    );
   };
 
-  const handleDeleteSelected = async () => {
-    if (
-      !window.confirm(
-        "選択された投稿をすべて削除します。本当によろしいですか？"
-      )
-    ) {
-      return;
-    }
+  useEffect(() => {
+    fetchToDos();
+  }, []);
 
+  const handleDeleteToDo = async (id: string) => {
     setIsSubmitting(true);
     try {
-      await Promise.all(
-        selectedPostIds.map(async (postId) => {
-          const requestUrl = `/api/posts/${postId}`;
-          const response = await fetch(requestUrl, {
-            method: "DELETE",
-            cache: "no-store",
-          });
-          if (!response.ok) {
-            throw new Error(`投稿 ${postId} の削除に失敗しました`);
-          }
-        })
-      );
-      setSelectedPostIds([]);
-      await fetchPosts();
+      const response = await fetch(`/api/todos/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error("ToDoの削除に失敗しました");
+      }
+      fetchToDos();
     } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `投稿の削除中にエラーが発生しました\n${error.message}`
-          : "予期せぬエラーが発生しました";
-      window.alert(errorMsg);
-      console.error(errorMsg);
+      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
@@ -102,7 +85,7 @@ const Page: React.FC = () => {
     return <div>{fetchError}</div>;
   }
 
-  if (!posts) {
+  if (!todos) {
     return (
       <div className="text-gray-500">
         <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
@@ -113,68 +96,54 @@ const Page: React.FC = () => {
 
   return (
     <main>
-      <div className="text-2xl font-bold">投稿記事の管理</div>
-
-      <div className="mb-3 flex items-end justify-between">
+      <div className="text-2xl font-bold">ToDoリスト</div>
+      <Link href="/admin/todos/new">
         <button
           type="button"
-          onClick={handleDeleteSelected}
-          disabled={isSubmitting || selectedPostIds.length === 0}
           className={twMerge(
             "rounded-md px-5 py-1 font-bold",
-            "bg-red-500 text-white hover:bg-red-600",
-            "disabled:cursor-not-allowed disabled:opacity-50"
+            "bg-indigo-500 text-white hover:bg-indigo-600",
+            "disabled:cursor-not-allowed"
           )}
         >
-          選択した投稿を削除
+          <FontAwesomeIcon icon={faPlus} className="mr-1" />
+          新規作成
         </button>
-        <Link href="/admin/posts/new">
-          <button
-            type="submit"
-            className={twMerge(
-              "rounded-md px-5 py-1 font-bold",
-              "bg-blue-500 text-white hover:bg-blue-600",
-              "disabled:cursor-not-allowed disabled:opacity-50"
-            )}
-          >
-            新規作成
-          </button>
-        </Link>
-      </div>
-
+      </Link>
       <div className="space-y-3">
-        {posts.map((post) => (
-          <div key={post.id} className="flex items-center space-x-3">
-            <input
-              type="checkbox"
-              checked={selectedPostIds.includes(post.id)}
-              onChange={() => handleCheckboxChange(post.id)}
-              className="shrink-0" // 修正: flex-shrink-0 → shrink-0
-            />
-            <div className="grow">
-              {" "}
-              {/* 修正: flex-grow → grow */}
-              <AdminPostSummary
-                post={post}
-                reloadAction={fetchPosts}
-                setIsSubmitting={setIsSubmitting}
-              />
+        {todos.map((todo) => (
+          <div
+            key={todo.id}
+            className="flex items-center justify-between border-b pb-2"
+          >
+            <div>
+              <div className="font-bold">{todo.title}</div>
+              <div>{todo.description}</div>
+              <div>期限: {todo.dueDate}</div>
+              <div>優先度: {todo.priority}</div>
+              <div>完了: {todo.completed ? "はい" : "いいえ"}</div>
+            </div>
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={() => router.push(`/admin/todos/${todo.id}/edit`)}
+                className="h-48 w-full rounded-md border-2 px-3 py-1"
+              >
+                <FontAwesomeIcon icon={faEdit} className="mr-1" />
+                編集
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteToDo(todo.id)}
+                className="h-48 w-full rounded-md border-2 px-2 py-1"
+              >
+                <FontAwesomeIcon icon={faTrash} className="mr-1" />
+                削除
+              </button>
             </div>
           </div>
         ))}
       </div>
-
-      {isSubmitting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="flex items-center rounded-lg bg-white px-8 py-4 shadow-lg">
-            <FontAwesomeIcon
-              icon={faSpinner}
-              className="mr-2 animate-spin text-gray-500"
-            />
-            <div className="flex items-center text-gray-500">処理中...</div>
-          </div>
-        </div>
-      )}
     </main>
   );
 };

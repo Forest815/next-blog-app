@@ -2,76 +2,50 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const main = async () => {
-  // 既存のレコードを全て削除
-  await prisma.postCategory?.deleteMany();
-  await prisma.post?.deleteMany();
-  await prisma.category?.deleteMany();
-
-  // カテゴリデータの作成 (レコードのInsert)
-  const c1 = await prisma.category.create({ data: { name: "カテゴリ1" } });
-  const c2 = await prisma.category.create({ data: { name: "カテゴリ2" } });
-  const c3 = await prisma.category.create({ data: { name: "カテゴリ3" } });
-  const c4 = await prisma.category.create({ data: { name: "カテゴリ4" } });
-
-  // 投稿記事データの作成 (レコードのInsert)
-  const p1 = await prisma.post.create({
+async function main() {
+  // カテゴリの作成
+  const category = await prisma.category.create({
     data: {
-      title: "投稿1",
-      content: "投稿1の本文。<br/>投稿1の本文。投稿1の本文。",
-      coverImageURL:
-        "https://w1980.blob.core.windows.net/pg3/cover-img-red.jpg",
-      categories: {
-        create: [{ categoryId: c1.id }, { categoryId: c2.id }],
-      },
+      name: "買い物",
     },
   });
 
-  const p2 = await prisma.post.create({
+  // サンプルデータの作成
+  const todo1 = await prisma.toDo.create({
     data: {
-      title: "投稿2",
-      content: "投稿2の本文。<br/>投稿2の本文。投稿2の本文。",
-      coverImageURL:
-        "https://w1980.blob.core.windows.net/pg3/cover-img-green.jpg",
-      categories: {
-        create: [{ categoryId: c2.id }, { categoryId: c3.id }],
-      },
+      title: "買い物リスト1",
+      description: "牛乳、パン、卵を買う",
+      dueDate: new Date("2023-12-31"),
+      priority: "high",
+      completed: false,
+      categoryId: category.id,
     },
   });
 
-  const p3 = await prisma.post.create({
+  const todo2 = await prisma.toDo.create({
     data: {
-      title: "投稿3",
-      content: "投稿3の本文。<br/>投稿3の本文。投稿3の本文。",
-      coverImageURL:
-        "https://w1980.blob.core.windows.net/pg3/cover-img-yellow.jpg",
-      categories: {
-        create: [
-          { categoryId: c1.id },
-          { categoryId: c3.id },
-          { categoryId: c4.id },
-        ],
-      },
+      title: "買い物リスト2",
+      description: "野菜、果物を買う",
+      dueDate: new Date("2023-12-25"),
+      priority: "medium",
+      completed: false,
+      categoryId: category.id,
     },
   });
 
-  const p4 = await prisma.post.create({
+  const todo3 = await prisma.toDo.create({
     data: {
-      title: "投稿4",
-      content: "投稿4の本文。<br/>投稿4の本文。投稿4の本文。",
-      coverImageURL:
-        "https://w1980.blob.core.windows.net/pg3/cover-img-purple.jpg",
-      categories: {
-        create: [],
-      },
+      title: "買い物リスト3",
+      description: "洗剤、トイレットペーパーを買う",
+      dueDate: new Date("2023-12-20"),
+      priority: "low",
+      completed: false,
+      categoryId: category.id,
     },
   });
 
-  console.log(JSON.stringify(p1, null, 2));
-  console.log(JSON.stringify(p2, null, 2));
-  console.log(JSON.stringify(p3, null, 2));
-  console.log(JSON.stringify(p4, null, 2));
-};
+  console.log({ todo1, todo2, todo3 });
+}
 
 main()
   .catch((e) => {

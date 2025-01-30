@@ -1,14 +1,16 @@
+import prisma from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+type RouteParams = {
+  params: {
+    id: string;
+  };
+};
 
-export const GET = async (
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) => {
-  const { id } = params;
+// GETリクエスト: 特定のToDoアイテムを取得
+export const GET = async (req: NextRequest, routeParams: RouteParams) => {
   try {
+    const id = routeParams.params.id;
     const todo = await prisma.toDo.findUnique({
       where: { id },
     });
@@ -28,11 +30,9 @@ export const GET = async (
   }
 };
 
-export const PUT = async (
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) => {
-  const { id } = params;
+// PUTリクエスト: 特定のToDoアイテムを更新
+export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
+  const { id } = routeParams.params;
   const { title, description, dueDate, priority, completed } = await req.json();
   try {
     const updatedToDo = await prisma.toDo.update({
@@ -49,11 +49,9 @@ export const PUT = async (
   }
 };
 
-export const DELETE = async (
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) => {
-  const { id } = params;
+// DELETEリクエスト: 特定のToDoアイテムを削除
+export const DELETE = async (req: NextRequest, routeParams: RouteParams) => {
+  const { id } = routeParams.params;
   try {
     await prisma.toDo.delete({
       where: { id },
