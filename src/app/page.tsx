@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import type { ToDo } from "@/app/_types/ToDo";
+import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
@@ -9,25 +9,50 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
+import { ToDo } from "@/app/_types/ToDo";
 import Link from "next/link";
 
-const ToDoPage: React.FC = () => {
+// ToDoをフェッチしたときのレスポンスのデータ型
+type ToDoApiResponse = {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  priority: string;
+  completed: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+const Page: React.FC = () => {
   const [todos, setTodos] = useState<ToDo[] | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   const fetchToDos = async () => {
     try {
-      const requestUrl = `/api/todos`;
+      const requestUrl = "/api/todos";
       const response = await fetch(requestUrl, {
         method: "GET",
         cache: "no-store",
       });
       if (!response.ok) {
-        throw new Error("データの取得に失敗しました");
+        throw new Error("ToDoの取得に失敗しました");
       }
-      const todoResponse: ToDo[] = await response.json();
-      setTodos(todoResponse);
+      const todoResponse: ToDoApiResponse[] = await response.json();
+      setTodos(
+        todoResponse.map((todo) => ({
+          id: todo.id,
+          title: todo.title,
+          description: todo.description,
+          dueDate: todo.dueDate,
+          priority: todo.priority as "low" | "medium" | "high",
+          completed: todo.completed,
+          createdAt: todo.createdAt,
+          updatedAt: todo.updatedAt,
+        }))
+      );
     } catch (e) {
       setFetchError(
         e instanceof Error ? e.message : "予期せぬエラーが発生しました"
@@ -38,48 +63,6 @@ const ToDoPage: React.FC = () => {
   useEffect(() => {
     fetchToDos();
   }, []);
-
-  const handleAddToDo = async (newToDo: ToDo) => {
-    setIsSubmitting(true);
-    try {
-      const response = await fetch("/api/todos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newToDo),
-      });
-      if (!response.ok) {
-        throw new Error("ToDoの追加に失敗しました");
-      }
-      fetchToDos();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleEditToDo = async (updatedToDo: ToDo) => {
-    setIsSubmitting(true);
-    try {
-      const response = await fetch(`/api/todos/${updatedToDo.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedToDo),
-      });
-      if (!response.ok) {
-        throw new Error("ToDoの更新に失敗しました");
-      }
-      fetchToDos();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleDeleteToDo = async (id: string) => {
     setIsSubmitting(true);
@@ -129,10 +112,7 @@ const ToDoPage: React.FC = () => {
       </Link>
       <div className="space-y-3">
         {todos.map((todo) => (
-          <div
-            key={todo.id}
-            className="flex items-center justify-between border-b pb-2"
-          >
+          <div key={todo.id} className="w-full rounded-md border-2 px-2 py-1">
             <div>
               <div className="font-bold">{todo.title}</div>
               <div>{todo.description}</div>
@@ -143,9 +123,7 @@ const ToDoPage: React.FC = () => {
             <div className="flex space-x-2">
               <button
                 type="button"
-                onClick={() =>
-                  handleEditToDo({ ...todo, completed: !todo.completed })
-                }
+                onClick={() => router.push(`/admin/todos/${todo.id}/edit`)}
                 className="w-full rounded-md border-2 px-2 py-1"
               >
                 <FontAwesomeIcon icon={faEdit} className="mr-1" />
@@ -154,7 +132,7 @@ const ToDoPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleDeleteToDo(todo.id)}
-                className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
+                className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600"
               >
                 <FontAwesomeIcon icon={faTrash} className="mr-1" />
                 削除
@@ -167,4 +145,4 @@ const ToDoPage: React.FC = () => {
   );
 };
 
-export default ToDoPage;
+export default Page;

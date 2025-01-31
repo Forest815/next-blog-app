@@ -5,8 +5,6 @@
 // 3. npx prisma generate
 // 4. npx prisma db seed
 
-
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -16,38 +14,36 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
-        
 
 // ToDoテーブル
 model ToDo {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  dueDate     DateTime
-  priority    String
-  completed   Boolean
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  toDoCategories ToDoCategory[]
+  id           String         @id @default(uuid())
+  title        String
+  description  String
+  dueDate      DateTime
+  priority     String
+  completed    Boolean
+  categoryId   String?
+  category     Category?      @relation(fields: [categoryId], references: [id])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  ToDoCategory ToDoCategory[]
 }
 
-// カテゴリテーブル
 model Category {
-  id    String @id @default(uuid())
-  name  String @unique
-  todos ToDo[]
-  toDoCategories ToDoCategory[]
+  id           String         @id @default(uuid())
+  name         String
+  todos        ToDo[] // ここにリレーションフィールドを追加
+  ToDoCategory ToDoCategory[]
 }
 
 // ToDoとカテゴリを紐づける中間テーブル
 model ToDoCategory {
-  id          String @id @default(uuid())
-  toDoId      String
-  categoryId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  toDo        ToDo     @relation(fields: [toDoId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  toDoId     String
+  categoryId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  toDo       ToDo     @relation(fields: [toDoId], references: [id], onDelete: Cascade)
 }

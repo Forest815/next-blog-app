@@ -172,7 +172,7 @@ const EditToDoPage: React.FC = () => {
           <button
             type="button"
             onClick={() => router.push("/admin/todos")}
-            className="h-48 w-full rounded-md border-2 px-5 py-1"
+            className="w-full rounded-md border-2 px-2 py-1"
           >
             <FontAwesomeIcon icon={faTimes} className="mr-1" />
             キャンセル

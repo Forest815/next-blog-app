@@ -1,326 +1,167 @@
 "use client";
-import { useState, useEffect, useRef, ChangeEvent } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faSave,
-  faSpinner,
-  faThumbsUp,
-  faComment,
-} from "@fortawesome/free-solid-svg-icons";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
-import { useAuth } from "@/app/_hooks/useAuth";
-import { supabase } from "@/app/utils/supabase";
-import CryptoJS from "crypto-js";
-import Image from "next/image";
 
-const calculateMD5Hash = async (file: File): Promise<string> => {
-  const buffer = await file.arrayBuffer();
-  const wordArray = CryptoJS.lib.WordArray.create(buffer);
-  return CryptoJS.MD5(wordArray).toString();
-};
-
-type Reply = {
+// カテゴリをフェッチしたときのレスポンスのデータ型
+type CategoryApiResponse = {
   id: string;
-  content: string;
-  likes: number;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
-type Comment = {
+// 投稿記事のカテゴリ選択用のデータ型
+type SelectableCategory = {
   id: string;
-  content: string;
-  likes: number;
-  newReply?: string;
-  replies?: Reply[];
+  name: string;
+  isSelect: boolean;
 };
 
-// Removed duplicate Reply interface
-
-const handleReplyLike = (replyId: string) => {
-  // いいね機能の実装
-};
-
-const replies: Reply[] = [
-  // 例としてのリプライデータ
-];
-
-const EditPostPage: React.FC = () => {
-  const bucketName = "cover_image";
-  const { id } = useParams();
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [coverImageKey, setCoverImageKey] = useState<string | undefined>();
-  const [coverImageUrl, setCoverImageUrl] = useState<string | undefined>();
-  const [titleError, setTitleError] = useState<string | null>(null);
-  const [contentError, setContentError] = useState<string | null>(null);
-  const [coverImageKeyError, setCoverImageKeyError] = useState<string | null>(
-    null
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
+// ToDoリストの新規作成のページ
+const Page: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
-  const [likes, setLikes] = useState<number>(0);
-  const [comments, setComments] = useState<any[]>([]);
-  const [newComment, setNewComment] = useState<string>("");
+
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newDueDate, setNewDueDate] = useState("");
+  const [newPriority, setNewPriority] = useState("low");
+  const [newCompleted, setNewCompleted] = useState(false);
+
   const router = useRouter();
-  const { session } = useAuth();
-  const hiddenFileInputRef = useRef<HTMLInputElement>(null);
 
+  // カテゴリ配列 (State)。取得中と取得失敗時は null、既存カテゴリが0個なら []
+  const [checkableCategories, setCheckableCategories] = useState<
+    SelectableCategory[] | null
+  >(null);
+
+  // コンポーネントがマウントされたとき (初回レンダリングのとき) に1回だけ実行
   useEffect(() => {
-    const fetchPost = async () => {
-      setIsLoading(true);
+    // ウェブAPI (/api/categories) からカテゴリの一覧をフェッチする関数の定義
+    const fetchCategories = async () => {
       try {
-        const response = await fetch(`/api/posts/${id}`);
-        if (!response.ok) {
-          throw new Error("データの取得に失敗しました");
-        }
-        const data = await response.json();
-        setTitle(data.title);
-        setContent(data.content);
-        setCoverImageKey(data.coverImageKey);
-        setLikes(data.likes || 0);
-        setComments(data.comments || []);
+        setIsLoading(true);
 
-        const { data: imageData } = supabase.storage
-          .from(bucketName)
-          .getPublicUrl(data.coverImageKey);
-        setCoverImageUrl(imageData.publicUrl);
+        // フェッチ処理の本体
+        const requestUrl = "/api/categories";
+        const res = await fetch(requestUrl, {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        // レスポンスのステータスコードが200以外の場合 (カテゴリのフェッチに失敗した場合)
+        if (!res.ok) {
+          setCheckableCategories(null);
+          throw new Error(`${res.status}: ${res.statusText}`); // -> catch節に移動
+        }
+
+        // レスポンスのボディをJSONとして読み取りカテゴリ配列 (State) にセット
+        const apiResBody = (await res.json()) as CategoryApiResponse[];
+        setCheckableCategories(
+          apiResBody.map((body) => ({
+            id: body.id,
+            name: body.name,
+            isSelect: false,
+          }))
+        );
       } catch (error) {
-        console.error(error);
-        setFetchErrorMsg((error as any).message);
+        const errorMsg =
+          error instanceof Error
+            ? `カテゴリの一覧のフェッチに失敗しました: ${error.message}`
+            : `予期せぬエラーが発生しました ${error}`;
+        console.error(errorMsg);
+        setFetchErrorMsg(errorMsg);
       } finally {
+        // 成功した場合も失敗した場合もローディング状態を解除
         setIsLoading(false);
       }
     };
 
-    fetchPost();
-  }, [id]);
+    fetchCategories();
+  }, []);
 
-  const validateInputs = () => {
-    let isValid = true;
-    if (title.trim() === "") {
-      setTitleError("文字を入力してください");
-      isValid = false;
-    } else {
-      setTitleError(null);
-    }
+  // チェックボックスの状態 (State) を更新する関数
+  const switchCategoryState = (categoryId: string) => {
+    if (!checkableCategories) return;
 
-    if (content.trim() === "") {
-      setContentError("文字を入力してください");
-      isValid = false;
-    } else {
-      setContentError(null);
-    }
-
-    if (!coverImageKey) {
-      setCoverImageKeyError("画像をアップロードしてください");
-      isValid = false;
-    } else {
-      setCoverImageKeyError(null);
-    }
-
-    return isValid;
-  };
-
-  const handleSave = async () => {
-    if (!validateInputs()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const response = await fetch(`/api/posts/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title,
-          content,
-          coverImageKey,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error("投稿記事の更新に失敗しました");
-      }
-      router.push("/admin/posts");
-    } catch (error) {
-      console.error(error);
-      alert("投稿記事の更新に失敗しました");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const updateTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
-  };
-
-  const updateContent = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value);
-  };
-
-  const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    setCoverImageKey(undefined);
-    setCoverImageUrl(undefined);
-
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files?.[0];
-    const fileHash = await calculateMD5Hash(file);
-    const path = `private/${fileHash}`;
-    const { data, error } = await supabase.storage
-      .from(bucketName)
-      .upload(path, file, { upsert: true });
-
-    if (error || !data) {
-      window.alert(`アップロードに失敗 ${error.message}`);
-      return;
-    }
-    setCoverImageKey(data.path);
-    const publicUrlResult = supabase.storage
-      .from(bucketName)
-      .getPublicUrl(data.path);
-    setCoverImageUrl(publicUrlResult.data.publicUrl);
-  };
-
-  const handleLike = async () => {
-    try {
-      const response = await fetch(`/api/posts/${id}/like`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error("いいねの更新に失敗しました");
-      }
-      const data = await response.json();
-      setLikes(data.likes);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleCommentSubmit = async () => {
-    if (newComment.trim() === "") return;
-
-    try {
-      const response = await fetch(`/api/posts/${id}/comments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ content: newComment }),
-      });
-      if (!response.ok) {
-        throw new Error("コメントの追加に失敗しました");
-      }
-      const data = await response.json();
-      setComments([...comments, data]);
-      setNewComment("");
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleCommentLike = async (commentId: string) => {
-    try {
-      const response = await fetch(`/api/comments/${commentId}/like`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error("コメントのいいねの更新に失敗しました");
-      }
-      const data = await response.json();
-      setComments((prevComments) =>
-        prevComments.map((comment) =>
-          comment.id === commentId ? { ...comment, likes: data.likes } : comment
-        )
-      );
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleReplyChange = (
-    e: ChangeEvent<HTMLInputElement>,
-    commentId: string
-  ) => {
-    setComments((prevComments) =>
-      prevComments.map((comment) =>
-        comment.id === commentId
-          ? { ...comment, newReply: e.target.value }
-          : comment
+    setCheckableCategories(
+      checkableCategories.map((category) =>
+        category.id === categoryId
+          ? { ...category, isSelect: !category.isSelect }
+          : category
       )
     );
   };
 
-  const handleReplySubmit = async (commentId: string) => {
-    const comment = comments.find((comment) => comment.id === commentId);
-    if (!comment || comment.newReply.trim() === "") return;
-
-    try {
-      const response = await fetch(`/api/comments/${commentId}/replies`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ content: comment.newReply }),
-      });
-      if (!response.ok) {
-        throw new Error("返信の追加に失敗しました");
-      }
-      const data = await response.json();
-      setComments((prevComments) =>
-        prevComments.map((comment) =>
-          comment.id === commentId
-            ? {
-                ...comment,
-                replies: [...(comment.replies || []), data],
-                newReply: "",
-              }
-            : comment
-        )
-      );
-    } catch (error) {
-      console.error(error);
-    }
+  const updateNewTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewTitle(e.target.value);
   };
 
-  const handleReplyLike = async (replyId: string) => {
-    try {
-      const response = await fetch(`/api/replies/${replyId}/like`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error("返信のいいねの更新に失敗しました");
-      }
-      const data = await response.json();
-      setComments((prevComments: Comment[]) =>
-        prevComments.map((comment: Comment) => ({
-          ...comment,
-          replies: comment.replies?.map((reply: Reply) =>
-            reply.id === replyId ? { ...reply, likes: data.likes } : reply
-          ),
-        }))
-      );
-    } catch (error) {
-      console.error(error);
-    }
+  const updateNewDescription = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewDescription(e.target.value);
   };
 
-  if (!session) return <div>ログインしていません。</div>;
+  const updateNewDueDate = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewDueDate(e.target.value);
+  };
+
+  const updateNewPriority = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setNewPriority(e.target.value);
+  };
+
+  const updateNewCompleted = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewCompleted(e.target.checked);
+  };
+
+  // フォームの送信処理
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); // この処理をしないとページがリロードされるので注意
+
+    setIsSubmitting(true);
+
+    try {
+      const requestBody = {
+        title: newTitle,
+        description: newDescription,
+        dueDate: newDueDate,
+        priority: newPriority,
+        completed: newCompleted,
+        categoryIds: checkableCategories
+          ? checkableCategories.filter((c) => c.isSelect).map((c) => c.id)
+          : [],
+      };
+      const requestUrl = "/api/todos";
+      console.log(`${requestUrl} => ${JSON.stringify(requestBody, null, 2)}`);
+      const res = await fetch(requestUrl, {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`); // -> catch節に移動
+      }
+
+      const todoResponse = await res.json();
+      setIsSubmitting(false);
+      router.push("/admin/posts"); // 投稿記事の詳細ページに移動
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? `ToDoのPOSTリクエストに失敗しました\n${error.message}`
+          : `予期せぬエラーが発生しました\n${error}`;
+      console.error(errorMsg);
+      window.alert(errorMsg);
+      setIsSubmitting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -331,79 +172,131 @@ const EditPostPage: React.FC = () => {
     );
   }
 
-  if (fetchErrorMsg) {
+  if (!checkableCategories) {
     return <div className="text-red-500">{fetchErrorMsg}</div>;
   }
 
   return (
     <main>
-      <div className="mb-5 text-2xl font-bold">投稿記事の編集</div>
-      <div className="space-y-3">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
+      <div className="mb-4 text-2xl font-bold">ToDoリストの新規作成</div>
+
+      {isSubmitting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="flex items-center rounded-lg bg-white px-8 py-4 shadow-lg">
+            <FontAwesomeIcon
+              icon={faSpinner}
+              className="mr-2 animate-spin text-gray-500"
+            />
+            <div className="flex items-center text-gray-500">処理中...</div>
+          </div>
+        </div>
+      )}
+
+      <form
+        onSubmit={handleSubmit}
+        className={twMerge("space-y-4", isSubmitting && "opacity-50")}
+      >
+        <div className="space-y-1">
+          <label htmlFor="title" className="block font-bold">
             タイトル
           </label>
           <input
             type="text"
-            value={title}
-            onChange={updateTitle}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            id="title"
+            name="title"
+            className="w-full rounded-md border-2 px-2 py-1"
+            value={newTitle}
+            onChange={updateNewTitle}
+            placeholder="タイトルを記入してください"
+            required
           />
-          {titleError && <div className="text-red-500">{titleError}</div>}
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            内容
+
+        <div className="space-y-1">
+          <label htmlFor="description" className="block font-bold">
+            説明
           </label>
           <textarea
-            value={content}
-            onChange={updateContent}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            rows={10}
+            id="description"
+            name="description"
+            className="h-48 w-full rounded-md border-2 px-2 py-1"
+            value={newDescription}
+            onChange={updateNewDescription}
+            placeholder="説明を記入してください"
+            required
           />
-          {contentError && <div className="text-red-500">{contentError}</div>}
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            カバーイメージ (キー)
+
+        <div className="space-y-1">
+          <label htmlFor="dueDate" className="block font-bold">
+            期限
           </label>
           <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            hidden={true}
-            ref={hiddenFileInputRef}
+            type="date"
+            id="dueDate"
+            name="dueDate"
+            className="w-full rounded-md border-2 px-2 py-1"
+            value={newDueDate}
+            onChange={updateNewDueDate}
+            required
           />
-          <button
-            onClick={() => hiddenFileInputRef.current?.click()}
-            type="button"
-            className="rounded-md bg-indigo-500 px-3 py-1 text-white"
-          >
-            ファイルを選択
-          </button>
-          {coverImageKeyError && (
-            <div className="text-red-500">{coverImageKeyError}</div>
-          )}
-          <div className="break-all text-sm">
-            coverImageKey : {coverImageKey}
-          </div>
-          <div className="break-all text-sm">
-            coverImageUrl : {coverImageUrl}
-          </div>
-          {coverImageUrl && (
-            <div className="mt-2">
-              <Image
-                className="w-1/2 border-2 border-gray-300"
-                src={coverImageUrl}
-                alt="プレビュー画像"
-                width={1024}
-                height={1024}
-                priority
-              />
-            </div>
-          )}
         </div>
-        <div className="flex justify-end space-x-2">
+
+        <div className="space-y-1">
+          <label htmlFor="priority" className="block font-bold">
+            優先度
+          </label>
+          <select
+            id="priority"
+            name="priority"
+            className="w-full rounded-md border-2 px-2 py-1"
+            value={newPriority}
+            onChange={updateNewPriority}
+            required
+          >
+            <option value="low">低</option>
+            <option value="medium">中</option>
+            <option value="high">高</option>
+          </select>
+        </div>
+
+        <div className="space-y-1">
+          <label htmlFor="completed" className="block font-bold">
+            完了
+          </label>
+          <input
+            type="checkbox"
+            id="completed"
+            name="completed"
+            className="rounded-md border-2 px-2 py-1"
+            checked={newCompleted}
+            onChange={updateNewCompleted}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <div className="font-bold">タグ</div>
+          <div className="flex flex-wrap gap-x-3.5">
+            {checkableCategories.length > 0 ? (
+              checkableCategories.map((c) => (
+                <label key={c.id} className="flex space-x-1">
+                  <input
+                    id={c.id}
+                    type="checkbox"
+                    checked={c.isSelect}
+                    className="mt-0.5 cursor-pointer"
+                    onChange={() => switchCategoryState(c.id)}
+                  />
+                  <span className="cursor-pointer">{c.name}</span>
+                </label>
+              ))
+            ) : (
+              <div>選択可能なカテゴリが存在しません。</div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-4">
           <button
             type="submit"
             className={twMerge(
@@ -413,81 +306,23 @@ const EditPostPage: React.FC = () => {
             )}
             disabled={isSubmitting}
           >
-            保存
+            ToDoを作成
           </button>
-        </div>
-        <div className="mt-4">
           <button
-            onClick={handleLike}
-            className="flex items-center space-x-1 text-blue-500"
+            type="button"
+            onClick={() => router.push("/admin/categories")}
+            className={twMerge(
+              "rounded-md px-5 py-1 font-bold",
+              "bg-green-500 text-white hover:bg-green-600",
+              "disabled:cursor-not-allowed"
+            )}
           >
-            <FontAwesomeIcon icon={faThumbsUp} />
-            <span>{likes}</span>
+            新規カテゴリ作成
           </button>
         </div>
-        <div className="mt-4">
-          <h2 className="text-xl font-bold">コメント</h2>
-          <div className="space-y-3">
-            {comments.map((comment) => (
-              <div key={comment.id} className="border-b pb-2">
-                <div>{comment.content}</div>
-                <button
-                  onClick={() => handleCommentLike(comment.id)}
-                  className="flex items-center space-x-1 text-blue-500"
-                >
-                  <FontAwesomeIcon icon={faThumbsUp} />
-                  <span>{comment.likes}</span>
-                </button>
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    placeholder="コメントを追加"
-                    value={comment.newReply}
-                    onChange={(e) => handleReplyChange(e, comment.id)}
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  />
-                  <button
-                    onClick={() => handleReplySubmit(comment.id)}
-                    className="mt-1 rounded-md bg-indigo-500 px-3 py-1 text-white"
-                  >
-                    返信
-                  </button>
-                </div>
-                {comment.replies &&
-                  replies.map((reply: Reply) => (
-                    <div key={reply.id} className="ml-4 mt-2 border-l pl-2">
-                      <div>{reply.content}</div>
-                      <button
-                        onClick={() => handleReplyLike(reply.id)}
-                        className="flex items-center space-x-1 text-blue-500"
-                      >
-                        <FontAwesomeIcon icon={faThumbsUp} />
-                        <span>{reply.likes}</span>
-                      </button>
-                    </div>
-                  ))}
-              </div>
-            ))}
-          </div>
-          <div className="mt-4">
-            <input
-              type="text"
-              placeholder="コメントを追加"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
-            <button
-              onClick={handleCommentSubmit}
-              className="mt-1 rounded-md bg-indigo-500 px-3 py-1 text-white"
-            >
-              コメントを追加
-            </button>
-          </div>
-        </div>
-      </div>
+      </form>
     </main>
   );
 };
 
-export default EditPostPage;
+export default Page;

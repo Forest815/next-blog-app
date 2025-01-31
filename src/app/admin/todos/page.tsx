@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -25,7 +25,6 @@ const Page: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
@@ -152,7 +151,7 @@ const Page: React.FC = () => {
 
       const todoResponse = await res.json();
       setIsSubmitting(false);
-      setIsSubmitted(true);
+      router.push("/"); // 投稿記事の詳細ページに移動
     } catch (error) {
       const errorMsg =
         error instanceof Error
@@ -297,7 +296,7 @@ const Page: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex justify-end space-x-4">
+        <div className="flex justify-end">
           <button
             type="submit"
             className={twMerge(
@@ -311,21 +310,6 @@ const Page: React.FC = () => {
           </button>
         </div>
       </form>
-
-      {isSubmitted && (
-        <div className="mt-4 flex justify-center">
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className={twMerge(
-              "rounded-md px-5 py-1 font-bold",
-              "bg-green-500 text-white hover:bg-green-600"
-            )}
-          >
-            localhost3000に戻る
-          </button>
-        </div>
-      )}
     </main>
   );
 };
