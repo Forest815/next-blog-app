@@ -5,7 +5,6 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
 config.autoAddCss = false;
 
-// 正しいパスに修正
 import Header from "@/app/_components/Header";
 
 export const metadata: Metadata = {

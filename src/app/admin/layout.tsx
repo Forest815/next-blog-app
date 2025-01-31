@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "../globals.css"; // 正しいパスに修正
+import "../globals.css";
 
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
@@ -12,10 +12,8 @@ export const metadata: Metadata = {
   description: "Built to learn Next.js and modern web development.",
 };
 
-import { ReactNode } from "react";
-
 interface RootLayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {

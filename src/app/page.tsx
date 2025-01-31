@@ -132,7 +132,7 @@ const Page: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleDeleteToDo(todo.id)}
-                className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600"
+                className="w-full rounded-md border-2 px-2 py-1"
               >
                 <FontAwesomeIcon icon={faTrash} className="mr-1" />
                 削除
