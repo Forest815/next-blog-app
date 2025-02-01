@@ -64,7 +64,9 @@ const EditToDoPage: React.FC = () => {
           id: category.id,
           name: category.name,
           isSelect:
-            todo.category?.some((cat) => cat.id === category.id) || false,
+            (Array.isArray(todo.category) &&
+              todo.category.some((cat) => cat.id === category.id)) ||
+            false,
         }))
       );
     } catch (e) {
