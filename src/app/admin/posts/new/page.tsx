@@ -153,6 +153,7 @@ const Page: React.FC = () => {
       const todoResponse = await res.json();
       setIsSubmitting(false);
       setIsSubmitted(true);
+      router.push("/"); // 保存後に localhost:3000 にリダイレクト
     } catch (error) {
       const errorMsg =
         error instanceof Error
@@ -178,155 +179,142 @@ const Page: React.FC = () => {
   }
 
   return (
-    <main>
-      <div className="mb-4 text-2xl font-bold">ToDoリストの新規作成</div>
+    <>
+      <main>
+        <div className="mb-4 text-2xl font-bold">ToDoリストの新規作成</div>
 
-      {isSubmitting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="flex items-center rounded-lg bg-white px-8 py-4 shadow-lg">
-            <FontAwesomeIcon
-              icon={faSpinner}
-              className="mr-2 animate-spin text-gray-500"
+        {isSubmitting && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="flex items-center rounded-lg bg-white px-8 py-4 shadow-lg">
+              <FontAwesomeIcon
+                icon={faSpinner}
+                className="mr-2 animate-spin text-gray-500"
+              />
+              <div className="flex items-center text-gray-500">処理中...</div>
+            </div>
+          </div>
+        )}
+
+        <form
+          onSubmit={handleSubmit}
+          className={twMerge("space-y-4", isSubmitting && "opacity-50")}
+        >
+          <div className="space-y-1">
+            <label htmlFor="title" className="block font-bold">
+              タイトル
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              className="w-full rounded-md border-2 px-2 py-1"
+              value={newTitle}
+              onChange={updateNewTitle}
+              placeholder="タイトルを記入してください"
+              required
             />
-            <div className="flex items-center text-gray-500">処理中...</div>
           </div>
-        </div>
-      )}
 
-      <form
-        onSubmit={handleSubmit}
-        className={twMerge("space-y-4", isSubmitting && "opacity-50")}
-      >
-        <div className="space-y-1">
-          <label htmlFor="title" className="block font-bold">
-            タイトル
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={newTitle}
-            onChange={updateNewTitle}
-            placeholder="タイトルを記入してください"
-            required
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="description" className="block font-bold">
-            説明
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            className="h-48 w-full rounded-md border-2 px-2 py-1"
-            value={newDescription}
-            onChange={updateNewDescription}
-            placeholder="説明を記入してください"
-            required
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="dueDate" className="block font-bold">
-            期限
-          </label>
-          <input
-            type="date"
-            id="dueDate"
-            name="dueDate"
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={newDueDate}
-            onChange={updateNewDueDate}
-            required
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="priority" className="block font-bold">
-            優先度
-          </label>
-          <select
-            id="priority"
-            name="priority"
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={newPriority}
-            onChange={updateNewPriority}
-            required
-          >
-            <option value="low">低</option>
-            <option value="medium">中</option>
-            <option value="high">高</option>
-          </select>
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="completed" className="block font-bold">
-            完了
-          </label>
-          <input
-            type="checkbox"
-            id="completed"
-            name="completed"
-            className="rounded-md border-2 px-2 py-1"
-            checked={newCompleted}
-            onChange={updateNewCompleted}
-          />
-        </div>
-
-        <div className="space-y-1">
-          <div className="font-bold">タグ</div>
-          <div className="flex flex-wrap gap-x-3.5">
-            {checkableCategories.length > 0 ? (
-              checkableCategories.map((c) => (
-                <label key={c.id} className="flex space-x-1">
-                  <input
-                    id={c.id}
-                    type="checkbox"
-                    checked={c.isSelect}
-                    className="mt-0.5 cursor-pointer"
-                    onChange={() => switchCategoryState(c.id)}
-                  />
-                  <span className="cursor-pointer">{c.name}</span>
-                </label>
-              ))
-            ) : (
-              <div>選択可能なカテゴリが存在しません。</div>
-            )}
+          <div className="space-y-1">
+            <label htmlFor="description" className="block font-bold">
+              説明
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              className="h-48 w-full rounded-md border-2 px-2 py-1"
+              value={newDescription}
+              onChange={updateNewDescription}
+              placeholder="説明を記入してください"
+              required
+            />
           </div>
-        </div>
 
-        <div className="flex justify-end space-x-4">
-          <button
-            type="submit"
-            className={twMerge(
-              "rounded-md px-5 py-1 font-bold",
-              "bg-indigo-500 text-white hover:bg-indigo-600",
-              "disabled:cursor-not-allowed"
-            )}
-            disabled={isSubmitting}
-          >
-            ToDoを作成
-          </button>
-        </div>
-      </form>
+          <div className="space-y-1">
+            <label htmlFor="dueDate" className="block font-bold">
+              期限
+            </label>
+            <input
+              type="date"
+              id="dueDate"
+              name="dueDate"
+              className="w-full rounded-md border-2 px-2 py-1"
+              value={newDueDate}
+              onChange={updateNewDueDate}
+              required
+            />
+          </div>
 
-      {isSubmitted && (
-        <div className="mt-4 flex justify-center">
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className={twMerge(
-              "rounded-md px-5 py-1 font-bold",
-              "bg-green-500 text-white hover:bg-green-600"
-            )}
-          >
-            localhost3000に戻る
-          </button>
-        </div>
-      )}
-    </main>
+          <div className="space-y-1">
+            <label htmlFor="priority" className="block font-bold">
+              優先度
+            </label>
+            <select
+              id="priority"
+              name="priority"
+              className="w-full rounded-md border-2 px-2 py-1"
+              value={newPriority}
+              onChange={updateNewPriority}
+              required
+            >
+              <option value="low">低</option>
+              <option value="medium">中</option>
+              <option value="high">高</option>
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="completed" className="block font-bold">
+              完了
+            </label>
+            <input
+              type="checkbox"
+              id="completed"
+              name="completed"
+              className="rounded-md border-2 px-2 py-1"
+              checked={newCompleted}
+              onChange={updateNewCompleted}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <div className="font-bold">タグ</div>
+            <div className="flex flex-wrap gap-x-3.5">
+              {checkableCategories.length > 0 ? (
+                checkableCategories.map((c) => (
+                  <label key={c.id} className="flex space-x-1">
+                    <input
+                      id={c.id}
+                      type="checkbox"
+                      checked={c.isSelect}
+                      className="mt-0.5 cursor-pointer"
+                      onChange={() => switchCategoryState(c.id)}
+                    />
+                    <span className="cursor-pointer">{c.name}</span>
+                  </label>
+                ))
+              ) : (
+                <div>選択可能なカテゴリが存在しません。</div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-4">
+            <button
+              type="submit"
+              className={twMerge(
+                "rounded-md px-5 py-1 font-bold",
+                "bg-indigo-500 text-white hover:bg-indigo-600",
+                "disabled:cursor-not-allowed"
+              )}
+              disabled={isSubmitting}
+            >
+              ToDoを作成
+            </button>
+          </div>
+        </form>
+      </main>
+    </>
   );
 };
 

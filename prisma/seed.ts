@@ -3,14 +3,14 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  // カテゴリの作成
+  // カテゴリを作成
   const category = await prisma.category.create({
     data: {
       name: "買い物",
     },
   });
 
-  // サンプルデータの作成
+  // ToDo アイテムを作成
   const todo1 = await prisma.toDo.create({
     data: {
       title: "買い物リスト1",
@@ -55,5 +55,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
-export default prisma;

@@ -6,12 +6,28 @@ import { faSpinner, faSave, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { ToDo } from "@/app/_types/ToDo";
 
+type CategoryApiResponse = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type SelectableCategory = {
+  id: string;
+  name: string;
+  isSelect: boolean;
+};
+
 const EditToDoPage: React.FC = () => {
   const router = useRouter();
   const { id } = useParams();
   const [todo, setTodo] = useState<Partial<ToDo>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<SelectableCategory[] | null>(
+    null
+  );
 
   const fetchToDo = useCallback(async () => {
     try {
@@ -32,9 +48,41 @@ const EditToDoPage: React.FC = () => {
     }
   }, [id]);
 
+  const fetchCategories = useCallback(async () => {
+    try {
+      const requestUrl = "/api/categories";
+      const response = await fetch(requestUrl, {
+        method: "GET",
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error("カテゴリの取得に失敗しました");
+      }
+      const categoryResponse: CategoryApiResponse[] = await response.json();
+      setCategories(
+        categoryResponse.map((category) => ({
+          id: category.id,
+          name: category.name,
+          isSelect:
+            todo.category?.some((cat) => cat.id === category.id) || false,
+        }))
+      );
+    } catch (e) {
+      setFetchError(
+        e instanceof Error ? e.message : "予期せぬエラーが発生しました"
+      );
+    }
+  }, [todo.category]);
+
   useEffect(() => {
     fetchToDo();
   }, [fetchToDo]);
+
+  useEffect(() => {
+    if (todo.id) {
+      fetchCategories();
+    }
+  }, [fetchCategories, todo.id]);
 
   const handleSave = async () => {
     setIsSubmitting(true);
@@ -44,7 +92,12 @@ const EditToDoPage: React.FC = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(todo),
+        body: JSON.stringify({
+          ...todo,
+          category: categories
+            ?.filter((category) => category.isSelect)
+            .map((category) => ({ id: category.id, name: category.name })),
+        }),
       });
       if (!response.ok) {
         throw new Error("ToDoの更新に失敗しました");
@@ -57,11 +110,23 @@ const EditToDoPage: React.FC = () => {
     }
   };
 
+  const switchCategoryState = (categoryId: string) => {
+    if (!categories) return;
+
+    setCategories(
+      categories.map((category) =>
+        category.id === categoryId
+          ? { ...category, isSelect: !category.isSelect }
+          : category
+      )
+    );
+  };
+
   if (fetchError) {
     return <div>{fetchError}</div>;
   }
 
-  if (!todo.id) {
+  if (!todo.id || !categories) {
     return (
       <div className="text-gray-500">
         <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
@@ -150,6 +215,27 @@ const EditToDoPage: React.FC = () => {
             checked={todo.completed || false}
             onChange={(e) => setTodo({ ...todo, completed: e.target.checked })}
           />
+        </div>
+        <div>
+          <div className="font-bold">カテゴリ</div>
+          <div className="flex flex-wrap gap-x-3.5">
+            {categories.length > 0 ? (
+              categories.map((category) => (
+                <label key={category.id} className="flex space-x-1">
+                  <input
+                    id={category.id}
+                    type="checkbox"
+                    checked={category.isSelect}
+                    className="mt-0.5 cursor-pointer"
+                    onChange={() => switchCategoryState(category.id)}
+                  />
+                  <span className="cursor-pointer">{category.name}</span>
+                </label>
+              ))
+            ) : (
+              <div>選択可能なカテゴリが存在しません。</div>
+            )}
+          </div>
         </div>
         <div className="flex space-x-2">
           <button
