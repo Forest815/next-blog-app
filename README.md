@@ -7,11 +7,11 @@
 ## 特徴と機能の説明
 
 - **タスク追加**: タスクの作成が簡単に行えます。タスクの内容はタイトル、説明、期限、優先度、完了です。
-  ![Image](https://github.com/user-attachments/assets/d0f37421-8342-4bf9-9b66-43a85b24abbf)
+  ![Image](https://github.com/user-attachments/assets/6862a059-0595-4dc4-958a-aac11373985e)
 - **タスク編集**: タスクの編集が簡単に行えます。編集内容はタスク追加と同じです。
-  ![Image](https://github.com/user-attachments/assets/d02db414-90ea-4825-9e30-60c0a791562e)
+  ![Image](https://github.com/user-attachments/assets/47ccdff9-9a33-4ace-93be-17875323ab0b)
 - **タスク一覧**: 追加したタスク一覧が見れます。ここでタスクを期限、優先度、完了でソートできます。また、作成したタスクを削除できます。
-  ![Image](https://github.com/user-attachments/assets/5a2c7671-d74d-4d06-979d-6628d56d0041)
+  ![Image](https://github.com/user-attachments/assets/4ba44aee-fd7c-4d9a-8c99-cf3e42d154bb)
 
 ## 使用技術 (技術スタック)
 
