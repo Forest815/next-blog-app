@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ToDoアプリ
 
-## Getting Started
+- **概要**: ToDoアプリは、日々のタスクを管理するためのシンプルで使いやすいウェブアプリケーションです。ユーザーはタスクの作成、編集、削除、完了状態の管理を行うことができます。主に個人のタスク管理を目的としています。
+- **開発の背景・経緯**: 効率的なタスク管理を行うためのツールが必要だと感じ、Next.js と Prisma を学ぶためにこのアプリを構築しました。技術的な知識を深めるとともに、実際に使えるプロダクトを作成することを目指しました。
+- **公開URL**: [ToDoアプリ](https://next-blog-app-git-other-ap-forests-projects-d658f036.vercel.app/)
 
-First, run the development server:
+## 特徴と機能の説明
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **タスク追加**: タスクの作成が簡単に行えます。タスクの内容はタイトル、説明、期限、優先度、完了です。
+  ![タスク管理](https://next-blog-app-git-other-ap-forests-projects-d658f036.vercel.app/admin/posts/new)
+- **タスク編集**: タスクの編集が簡単に行えます。編集内容はタスク追加と同じです。
+  ![タスク管理](https://next-blog-app-git-other-ap-forests-projects-d658f036.vercel.app/admin/posts/[id])
+- **タスク一覧**: 追加したタスク一覧が見れます。ここでタスクを期限、優先度、完了でソートできます。また、作成したタスクを削除できます。
+  ![タスク一覧](https://next-blog-app-git-other-ap-forests-projects-d658f036.vercel.app/)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 使用技術 (技術スタック)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **言語とフレームワーク**:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+  - TypeScript
+  - Next.js
+  - Prisma
 
-## Learn More
+- **開発ツールとサービス**:
+  - VSCode
+  - Supabase
+  - Vercel
 
-To learn more about Next.js, take a look at the following resources:
+## 開発期間・体制
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **開発体制**: 個人開発
+- **開発期間**: 2024.12 ~ 2025.2 (約25時間)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 工夫した点・苦労した点
 
-## Deploy on Vercel
+- **技術的な挑戦**: Next.js と Prisma を組み合わせて、効率的なデータベース操作とページ生成を実現しました。
+- **苦労した点**: 認証機能の実装において、セキュリティを確保しつつユーザーエクスペリエンスを向上させるために、多くの時間を費やしました。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 既知の課題と今後の展望
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **既知の課題**:
+  - タスクの検索機能が未実装
+  - モバイルデバイスでの表示最適化が不十分
+  - ToDoリストにコンテンツを付けれなかった
+- **今後の展望**:
+  - タスクの検索機能を追加
+  - モバイルデバイスでの表示最適化
+  - コメント機能の追加
+  - コンテンツの追加とコンテンツでのソート
+
+## 連絡先
+
+- **ポートフォリオ**: [Kazushi's Portfolio](https://forest815.github.io/--7_35_/)
+- **所属**: とある高専の情報系学科3年生
