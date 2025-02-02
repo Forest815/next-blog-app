@@ -277,7 +277,7 @@ const Page: React.FC = () => {
             />
           </div>
 
-          <div className="space-y-1">
+          {/* <div className="space-y-1">
             <div className="font-bold">タグ</div>
             <div className="flex flex-wrap gap-x-3.5">
               {checkableCategories.length > 0 ? (
@@ -297,7 +297,7 @@ const Page: React.FC = () => {
                 <div>選択可能なカテゴリが存在しません。</div>
               )}
             </div>
-          </div>
+          </div> */}
 
           <div className="flex justify-end space-x-4">
             <button

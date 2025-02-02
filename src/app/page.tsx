@@ -113,7 +113,7 @@ const Page: React.FC = () => {
             新規作成
           </button>
         </Link>
-        <Link href="/admin/categories">
+        {/* <Link href="/admin/categories">
           <button
             type="button"
             className={twMerge(
@@ -125,7 +125,7 @@ const Page: React.FC = () => {
             <FontAwesomeIcon icon={faPlus} className="mr-1" />
             タグの作成
           </button>
-        </Link>
+        </Link> */}
       </div>
       <div className="flex space-x-4 mt-4">
         <button
@@ -174,12 +174,12 @@ const Page: React.FC = () => {
               <div>期限: {new Date(todo.dueDate).toLocaleDateString()}</div>
               <div>優先度: {todo.priority}</div>
               <div>完了: {todo.completed ? "はい" : "いいえ"}</div>
-              <div>
+              {/* <div>
                 カテゴリ:{" "}
                 {todo.category && todo.category.length > 0
                   ? todo.category.map((cat) => cat.name).join(", ")
                   : "なし"}
-              </div>
+              </div> */}
             </div>
             <div className="flex space-x-2">
               <Link href={`/admin/posts/${todo.id}`}>

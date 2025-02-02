@@ -218,7 +218,7 @@ const EditToDoPage: React.FC = () => {
             onChange={(e) => setTodo({ ...todo, completed: e.target.checked })}
           />
         </div>
-        <div>
+        {/* <div>
           <div className="font-bold">カテゴリ</div>
           <div className="flex flex-wrap gap-x-3.5">
             {categories.length > 0 ? (
@@ -238,7 +238,7 @@ const EditToDoPage: React.FC = () => {
               <div>選択可能なカテゴリが存在しません。</div>
             )}
           </div>
-        </div>
+        </div> */}
         <div className="flex space-x-2">
           <button
             type="button"
@@ -259,7 +259,7 @@ const EditToDoPage: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => router.push("/admin/todos")}
+            onClick={() => router.push("/")}
             className="w-full rounded-md border-2 px-2 py-1"
           >
             <FontAwesomeIcon icon={faTimes} className="mr-1" />
