@@ -52,3 +52,4 @@
 
 - **ポートフォリオ**: [Kazushi's Portfolio](https://forest815.github.io/--7_35_/)
 - **所属**: とある高専の情報系学科3年生
+
