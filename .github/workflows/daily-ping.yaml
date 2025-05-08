@@ -12,6 +12,7 @@ jobs:
     env:
       TZ: "Asia/Tokyo"
 
+
     steps:
       - name: Send HTTP GET request
         run: |
